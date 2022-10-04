@@ -1,7 +1,7 @@
 """ Full assembly of the parts to form the complete network """
 
 from .unet_parts import *
-
+import logging
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
@@ -23,6 +23,7 @@ class UNet(nn.Module):
         self.outc = OutConv(64, n_classes)
 
     def forward(self, x):
+        logging.info("input shape:" + str(x.shape))
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -33,4 +34,5 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
+        logging.info("output shape:" + str(logits.shape))
         return logits

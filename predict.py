@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import sys
 
 import numpy as np
 import torch
@@ -12,8 +13,7 @@ from utils.data_loading import BasicDataset
 from unet import UNet
 from utils.utils import plot_img_and_mask
 
-from ptflops import get_model_complexity_info
-from fvcore.nn import FlopCountAnalysis 
+
 
 def predict_img(net,
                 full_img,
@@ -25,13 +25,18 @@ def predict_img(net,
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
+    print("image shape: ", img.shape)
+
     with torch.no_grad():
         output = net(img)
+        print("output shape:", output.shape)
 
         if net.n_classes > 1:
             probs = F.softmax(output, dim=1)[0]
         else:
             probs = torch.sigmoid(output)[0]
+
+        print("probs shape:", probs.shape)
 
         tf = transforms.Compose([
             transforms.ToPILImage(),
@@ -41,10 +46,13 @@ def predict_img(net,
 
         full_mask = tf(probs.cpu()).squeeze()
 
+    print("net.n_classes:", net.n_classes)
+    ret = None
     if net.n_classes == 1:
-        return (full_mask > out_threshold).numpy()
+        ret = (full_mask > out_threshold).numpy()
     else:
-        return F.one_hot(full_mask.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy()
+        ret = F.one_hot(full_mask.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy()
+    return ret
 
 
 def get_args():
@@ -80,20 +88,33 @@ def mask_to_image(mask: np.ndarray):
 
 
 if __name__ == '__main__':
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = formatter = logging.Formatter('[%(asctime)s] p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s','%m-%d %H:%M:%S')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
     args = get_args()
+    logging.info(args)
     in_files = args.input
     out_files = get_output_filenames(args)
-
     net = UNet(n_channels=3, n_classes=2, bilinear=args.bilinear)
 
-    flops = FlopCountAnalysis(net, torch.randn(1, 3, 572, 572))
-    print("total flops: ", flops.total())
-    print("flops.by_module_and_operator():", flops.by_module_and_operator())
+    # from ptflops import get_model_complexity_info
+    # from fvcore.nn import FlopCountAnalysis 
 
-    macs, params = get_model_complexity_info(net, (3, 572, 572), as_strings=True,
-                                           print_per_layer_stat=True, verbose=True)
-    print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-    print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+   
+
+    # flops = FlopCountAnalysis(net, torch.randn(1, 3, 572, 572))
+    # print("total flops: ", flops.total())
+    # print("flops.by_module_and_operator():", flops.by_module_and_operator())
+
+    # macs, params = get_model_complexity_info(net, (3, 572, 572), as_strings=True,
+    #                                        print_per_layer_stat=True, verbose=True)
+    # print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+    # print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
     # EMED-UNet crosses the accuracy of U-Net with significantly reduced parameters from 31.043M to 6.72M, FLOPs from 386 G to 114 G, and model size from 386 MB to 80 MB. 
     # output: 
@@ -125,9 +146,6 @@ if __name__ == '__main__':
     net.load_state_dict(torch.load(args.model, map_location=device))
 
     logging.info('Model loaded!')
-
-
-   
 
     for i, filename in enumerate(in_files):
         logging.info(f'\nPredicting image {filename} ...')
