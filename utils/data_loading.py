@@ -78,3 +78,24 @@ class BasicDataset(Dataset):
 class CarvanaDataset(BasicDataset):
     def __init__(self, images_dir, masks_dir, scale=1):
         super().__init__(images_dir, masks_dir, scale, mask_suffix='_mask')
+
+if __name__ == '__main__':
+    for file in listdir("data/masks/"):
+        pil_img = Image.open("data/masks/" + file)
+        scale = 1
+        is_mask = True
+        w, h = pil_img.size
+        newW, newH = int(scale * w), int(scale * h)
+        assert newW > 0 and newH > 0, 'Scale is too small, resized images would have no pixel'
+        pil_img = pil_img.resize((newW, newH), resample=Image.NEAREST if is_mask else Image.BICUBIC)
+        img_ndarray = np.asarray(pil_img)
+        img_ndarray = img_ndarray.copy()
+        print(file)
+        o = dict()
+        for i in img_ndarray:
+            for j in i:
+                if j not in o:
+                    o[j] = 0
+                o[j] = o[j] + 1
+        print(o)
+        break;
