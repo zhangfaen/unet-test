@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # U-Net: Semantic segmentation with PyTorch
 <a href="#"><img src="https://img.shields.io/github/workflow/status/milesial/PyTorch-UNet/Publish%20Docker%20image?logo=github&style=for-the-badge" /></a>
 <a href="https://hub.docker.com/r/milesial/unet"><img src="https://img.shields.io/badge/docker%20image-available-blue?logo=Docker&style=for-the-badge" /></a>
@@ -107,7 +106,15 @@ optional arguments:
   --validation VAL, -v VAL
                         Percent of the data that is used as validation (0-100)
   --amp                 Use mixed precision
+  
+For example
+> nohup python train.py --epochs 10 --batch-size 5 --scale 0.3 --trained-model-file trained-models/unet-model-scale0.3-batchsize5.pth &
+
 ```
+Notes:
+  if cuda out of memory, consider down set, even to 1; 
+  11GB GPU card (2080Ti), support batch size 5 and scale 0.3 (aka image resize to (384, 575))
+  the Carvana dataset has images with resolution 1918 * 1280.
 
 By default, the `scale` is 0.5, so if you wish to obtain better results (but use more memory), set it to 1.
 
@@ -160,7 +167,7 @@ When launching a training, a link will be printed in the console. Click on it to
 
 
 ## Pretrained model
-A [pretrained model](https://github.com/milesial/Pytorch-UNet/releases/tag/v3.0) is available for the Carvana dataset. It can also be loaded from torch.hub:
+It can be loaded from torch.hub:
 
 ```python
 net = torch.hub.load('milesial/Pytorch-UNet', 'unet_carvana', pretrained=True, scale=0.5)
