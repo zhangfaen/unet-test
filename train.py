@@ -19,6 +19,7 @@ from unet import UNet
 dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
+dir_trained_model = Path('./trained-models/')
 
 
 def train_net(net,
@@ -27,9 +28,10 @@ def train_net(net,
               batch_size: int = 1,
               learning_rate: float = 1e-5,
               val_percent: float = 0.1,
-              save_checkpoint: bool = True,
+              save_checkpoint: bool = False,
               img_scale: float = 0.5,
-              amp: bool = False):
+              amp: bool = False,
+              trained_model_file: str = "trained-models/unet-model.pth"):
     # 1. Create dataset
     try:
         dataset = CarvanaDataset(dir_img, dir_mask, img_scale)
@@ -50,7 +52,7 @@ def train_net(net,
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
     experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
                                   val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
-                                  amp=amp))
+                                  amp=amp, trained_model_file = trained_model_file))
 
     logging.info(f'''Starting training:
         Epochs:          {epochs}
@@ -62,6 +64,7 @@ def train_net(net,
         Device:          {device.type}
         Images scaling:  {img_scale}
         Mixed Precision: {amp}
+        Trained Model File: {trained_model_file}
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
@@ -142,11 +145,17 @@ def train_net(net,
             torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch)))
             logging.info(f'Checkpoint {epoch} saved!')
 
+        Path(dir_trained_model).mkdir(parents=True, exist_ok=True)
+        torch.save(net.state_dict(), trained_model_file)
+        logging.info(f'Trained model file {trained_model_file} saved!')
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
-    parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
+    # if cuda out of memory, consider down set, even to 1; 
+    # 11GB GPU card (2080Ti), support batch size 5 and scale 0.3 (aka image resize to (384, 575))
+    # the Carvana dataset has images with resolution 1918 * 1280.
+    parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=10, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-5,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str, default=False, help='Load model from a .pth file')
@@ -156,6 +165,7 @@ def get_args():
     parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision')
     parser.add_argument('--bilinear', action='store_true', default=True, help='Use bilinear upsampling')
     parser.add_argument('--classes', '-c', type=int, default=2, help='Number of classes')
+    parser.add_argument('--trained-model-file', type=str, default="trained-modes/unet-model.pth", help='File name of trained model', dest='tmf')
 
     return parser.parse_args()
 
@@ -192,7 +202,8 @@ if __name__ == '__main__':
                   device=device,
                   img_scale=args.scale,
                   val_percent=args.val / 100,
-                  amp=args.amp)
+                  amp=args.amp,
+                  trained_model_file = args.tmf)
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

@@ -23,16 +23,23 @@ class UNet(nn.Module):
         self.outc = OutConv(64, n_classes)
 
     def forward(self, x):
-        logging.info("input shape:" + str(x.shape))
+        # logging.info("input shape:" + str(x.shape))
+        # logging.info("# of values >= 1 in x:" + str(torch.sum(x >= 1.0)))
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
+        # logging.info("# of values >= 1 in x5:" + str(torch.sum(x5 >= 1.0)))
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
+        # logging.info("# of values >= 1 after up4:" + str(torch.sum(x >= 1.0)))
         logits = self.outc(x)
-        logging.info("output shape:" + str(logits.shape))
+        # logging.info("output shape:" + str(logits.shape))
+        # logging.info("# of values >= 1 in logit:" + str(torch.sum(logits >= 1.0)))
+
+        # (N1, C1, H1, W1) of input x,  (N2, C2, H2, W2) of output(aka loggits),
+        # assert H1 == H2, W1 == W2
         return logits
