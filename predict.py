@@ -68,7 +68,7 @@ def get_args():
                         help='Minimum probability value to consider a mask pixel white')
     parser.add_argument('--scale', '-s', type=float, default=0.5,
                         help='Scale factor for the input images')
-    parser.add_argument('--bilinear', action='store_true', default=True, help='Use bilinear upsampling')
+    parser.add_argument('--bilinear', action='store_true', default=False, help='Use bilinear upsampling')
 
     return parser.parse_args()
 

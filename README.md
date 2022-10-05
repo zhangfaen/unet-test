@@ -155,6 +155,18 @@ optional arguments:
                         Minimum probability value to consider a mask pixel white
   --scale SCALE, -s SCALE
                         Scale factor for the input images
+
+For examples
+
+> python predict.py -i ./test-images-from-internet/test1.jpg  -o ./test-images-from-internet/test1-mask-by-unet_carvana_scale0.5_epoch2-by-milesial.jpg --model trained-models/unet_carvana_scale0.5_epoch2-by-milesial.pth
+
+
+> python predict.py -i ./test-images-from-internet/test1.jpg  -o ./test-images-from-internet/test1-mask-by-unet-model-scale0.3-batchsize5-by-zhangfaen.jpg --model trained-models/unet-model-scale0.3-batchsize5-by-zhangfaen.pth --bilinear
+
+> python predict.py -i ./test-images-from-internet/test2.jpg  -o ./test-images-from-internet/test2-mask-by-unet_carvana_scale0.5_epoch2-by-milesial.jpg --model trained-models/unet_carvana_scale0.5_epoch2-by-milesial.pth
+
+> python predict.py -i ./test-images-from-internet/test2.jpg  -o ./test-images-from-internet/test2-mask-by-unet-model-scale0.3-batchsize5-by-zhangfaen.jpg --model trained-models/unet-model-scale0.3-batchsize5-by-zhangfaen.pth --bilinear
+
 ```
 You can specify which model file to use with `--model MODEL.pth`.
 
@@ -195,6 +207,4 @@ Original paper by Olaf Ronneberger, Philipp Fischer, Thomas Brox:
 [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597)
 
 ![network architecture](https://i.imgur.com/jeDVpqF.png)
-=======
-# unet-test
->>>>>>> b3e5d440a961dae325e208ce7bd60376b5f48b28
+
